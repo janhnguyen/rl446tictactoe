@@ -74,9 +74,10 @@ class SACAgent:
         self.q2_opt = optim.Adam(self.q2.parameters(), lr=self.config.lr)
 
     def select_action(self, state: np.ndarray, evaluate: bool = False):
-        state_v = to_tensor(state, self.device).unsqueeze(0)
-        probs, _ = self.policy(state_v)
-        probs_np = probs.squeeze(0).cpu().numpy()
+        with torch.no_grad():
+            state_v = to_tensor(state, self.device).unsqueeze(0)
+            probs, _ = self.policy(state_v)
+            probs_np = probs.squeeze(0).cpu().numpy()
         available = self.env.available_actions()
         masked_probs = np.zeros_like(probs_np)
         if available:
