@@ -25,7 +25,12 @@ ALGORITHMS = {
 
 def main():
     parser = argparse.ArgumentParser(description="Train RL agents on TicTacToe")
-    parser.add_argument("algo", choices=ALGORITHMS.keys(), help="algorithm to train")
+    parser.add_argument(
+        "--algo",
+        choices=ALGORITHMS.keys(),
+        default="dqn",
+        help="algorithm to train (default: dqn)",
+    )
     parser.add_argument("--episodes", type=int, default=200, help="number of episodes")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()

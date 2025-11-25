@@ -24,12 +24,12 @@ Each agent exposes a `train(episodes)` method and selects actions that respect t
 pip install -r requirements.txt
 ```
 
-2. Train any agent:
+2. Train any agent (defaults to DQN if `--algo` is omitted):
 
 ```bash
-python train.py dqn --episodes 200
-python train.py rainbow --episodes 400
-python train.py sac --episodes 400
+python train.py --episodes 200              # DQN
+python train.py --algo rainbow --episodes 400
+python train.py --algo sac --episodes 400
 ```
 
 GPU acceleration is used when available. Set `--seed` for reproducible runs.
