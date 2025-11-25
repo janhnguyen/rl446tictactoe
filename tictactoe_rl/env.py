@@ -67,7 +67,9 @@ class TicTacToeEnv:
     def available_actions(self) -> List[int]:
         return [i for i, v in enumerate(self.board) if v == 0]
 
-    def step(self, action: int) -> StepResult:
+    def step(
+        self, action: int, *, opponent_action: Optional[int] = None, auto_opponent: bool = True
+    ) -> StepResult:
         if self.board[action] != 0:
             return StepResult(self.board.copy(), self.illegal_move_penalty, True, {"illegal": True})
 
@@ -78,8 +80,33 @@ class TicTacToeEnv:
             done = True
             return StepResult(self.board.copy(), reward, done, {})
 
-        opponent_action = random.choice(self.available_actions())
+        if not auto_opponent:
+            return StepResult(self.board.copy(), 0.0, False, {"awaiting_opponent": True})
+
+        if opponent_action is None:
+            opponent_action = random.choice(self.available_actions())
+
+        if self.board[opponent_action] != 0:
+            return StepResult(self.board.copy(), self.illegal_move_penalty, True, {"illegal_opponent": True})
+
         self.board[opponent_action] = -1
+        result = check_winner(self.board)
+        if result is not None:
+            if result == 0:
+                reward = 0.5
+            elif result == -1:
+                reward = -1.0
+            else:
+                reward = 1.0
+            return StepResult(self.board.copy(), reward, True, {})
+
+        return StepResult(self.board.copy(), 0.0, False, {})
+
+    def opponent_step(self, action: int) -> StepResult:
+        if self.board[action] != 0:
+            return StepResult(self.board.copy(), self.illegal_move_penalty, True, {"illegal_opponent": True})
+
+        self.board[action] = -1
         result = check_winner(self.board)
         if result is not None:
             if result == 0:

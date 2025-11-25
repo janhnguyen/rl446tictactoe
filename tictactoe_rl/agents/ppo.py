@@ -45,6 +45,13 @@ class PPOAgent:
         self.model = PPOActorCritic(env.observation_space, env.action_space, self.config.hidden).to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.config.lr)
 
+    def save(self, path: str) -> None:
+        torch.save(self.model.state_dict(), path)
+
+    def load(self, path: str) -> None:
+        state_dict = torch.load(path, map_location=self.device)
+        self.model.load_state_dict(state_dict)
+
     def select_action(self, state: np.ndarray):
         state_v = to_tensor(state, self.device).unsqueeze(0)
         logits, value = self.model(state_v)

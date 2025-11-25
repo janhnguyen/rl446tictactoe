@@ -40,6 +40,14 @@ class RainbowAgent:
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.config.lr)
         self.frame_idx = 0
 
+    def save(self, path: str) -> None:
+        torch.save(self.policy_net.state_dict(), path)
+
+    def load(self, path: str) -> None:
+        state_dict = torch.load(path, map_location=self.device)
+        self.policy_net.load_state_dict(state_dict)
+        self.target_net.load_state_dict(state_dict)
+
     def select_action(self, state: np.ndarray) -> int:
         state_v = to_tensor(state, self.device).unsqueeze(0)
         with torch.no_grad():

@@ -73,6 +73,13 @@ class SACAgent:
         self.q1_opt = optim.Adam(self.q1.parameters(), lr=self.config.lr)
         self.q2_opt = optim.Adam(self.q2.parameters(), lr=self.config.lr)
 
+    def save(self, path: str) -> None:
+        torch.save(self.policy.state_dict(), path)
+
+    def load(self, path: str) -> None:
+        state_dict = torch.load(path, map_location=self.device)
+        self.policy.load_state_dict(state_dict)
+
     def select_action(self, state: np.ndarray, evaluate: bool = False):
         with torch.no_grad():
             state_v = to_tensor(state, self.device).unsqueeze(0)

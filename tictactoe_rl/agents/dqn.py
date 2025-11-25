@@ -45,6 +45,14 @@ class DQNAgent:
         self.replay = ReplayBuffer(self.config.replay_size)
         self.frame_idx = 0
 
+    def save(self, path: str) -> None:
+        torch.save(self.policy_net.state_dict(), path)
+
+    def load(self, path: str) -> None:
+        state_dict = torch.load(path, map_location=self.device)
+        self.policy_net.load_state_dict(state_dict)
+        self.target_net.load_state_dict(state_dict)
+
     def select_action(self, state: np.ndarray, evaluate: bool = False) -> int:
         epsilon = epsilon_by_frame(self.frame_idx, self.config.eps_start, self.config.eps_final, self.config.eps_decay)
         self.frame_idx += 1

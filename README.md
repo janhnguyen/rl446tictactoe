@@ -24,7 +24,7 @@ Each agent exposes a `train(episodes)` method and selects actions that respect t
 pip install -r requirements.txt
 ```
 
-2. Train agents (defaults to training **all** algorithms sequentially if `--algo` is omitted):
+2. Train agents (defaults to training **all** algorithms sequentially if `--algo` is omitted). Checkpoints are saved to `checkpoints/<algo>.pt` by default:
 
 ```bash
 python train.py --episodes 200              # trains all algorithms
@@ -34,3 +34,11 @@ python train.py --algo sac --episodes 400
 ```
 
 GPU acceleration is used when available. Set `--seed` for reproducible runs.
+
+3. Play against a trained policy (agent moves first as **X**, you play **O**):
+
+```bash
+python play.py --algo dqn --checkpoint checkpoints/dqn.pt
+```
+
+Use `--algo` to pick a different agent and `--checkpoint` to point at another saved model.
