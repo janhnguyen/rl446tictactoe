@@ -35,10 +35,11 @@ python train.py --algo sac --episodes 400
 
 GPU acceleration is used when available. Set `--seed` for reproducible runs.
 
-3. Play against a trained policy (agent moves first as **X**, you play **O**):
+3. Play against a trained policy (agent moves first as **X**, you play **O**). If you omit `--algo`, you'll be prompted to pick one interactively:
 
 ```bash
 python play.py --algo dqn --checkpoint checkpoints/dqn.pt
+python play.py                                 # prompt to choose an algorithm
 ```
 
 Use `--algo` to pick a different agent and `--checkpoint` to point at another saved model.

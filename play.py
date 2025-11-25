@@ -105,7 +105,7 @@ def play_round(agent, device: torch.device) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description="Play against a trained TicTacToe agent")
-    parser.add_argument("--algo", choices=list(ALGORITHMS.keys()), default="dqn")
+    parser.add_argument("--algo", choices=list(ALGORITHMS.keys()), default=None)
     parser.add_argument(
         "--checkpoint",
         type=str,
@@ -115,17 +115,34 @@ def main():
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
+    def prompt_algorithm_choice() -> str:
+        options = list(ALGORITHMS.keys())
+        print("Select an algorithm to play against:")
+        for idx, name in enumerate(options, start=1):
+            print(f"  {idx}. {name}")
+        while True:
+            choice = input("Enter number or name: ").strip().lower()
+            if choice in ALGORITHMS:
+                return choice
+            if choice.isdigit():
+                idx = int(choice)
+                if 1 <= idx <= len(options):
+                    return options[idx - 1]
+            print("Invalid selection. Please choose a listed algorithm.")
+
+    algo = args.algo or prompt_algorithm_choice()
+
     set_seed(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     env = TicTacToeEnv()
-    agent_cls = ALGORITHMS[args.algo]
+    agent_cls = ALGORITHMS[algo]
     agent = agent_cls(env, device=device)
 
-    ckpt_path = Path(args.checkpoint or Path("checkpoints") / f"{args.algo}.pt")
+    ckpt_path = Path(args.checkpoint or Path("checkpoints") / f"{algo}.pt")
     if not ckpt_path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}. Run train.py to create it.")
     agent.load(str(ckpt_path))
-    print(f"Loaded {args.algo} checkpoint from {ckpt_path}")
+    print(f"Loaded {algo} checkpoint from {ckpt_path}")
 
     while True:
         play_round(agent, device)
