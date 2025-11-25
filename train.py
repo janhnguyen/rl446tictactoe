@@ -27,21 +27,27 @@ def main():
     parser = argparse.ArgumentParser(description="Train RL agents on TicTacToe")
     parser.add_argument(
         "--algo",
-        choices=ALGORITHMS.keys(),
-        default="dqn",
-        help="algorithm to train (default: dqn)",
+        choices=list(ALGORITHMS.keys()) + ["all"],
+        default="all",
+        help="which algorithm to train (default: all)",
     )
     parser.add_argument("--episodes", type=int, default=200, help="number of episodes")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
     set_seed(args.seed)
-    env = TicTacToeEnv()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    agent_cls = ALGORITHMS[args.algo]
-    agent = agent_cls(env, device=device)
-    rewards = agent.train(episodes=args.episodes)
-    print(f"Trained {args.algo} for {args.episodes} episodes. Avg reward: {sum(rewards)/len(rewards):.3f}")
+
+    selected_algos = list(ALGORITHMS.keys()) if args.algo == "all" else [args.algo]
+    for algo in selected_algos:
+        env = TicTacToeEnv()
+        agent_cls = ALGORITHMS[algo]
+        agent = agent_cls(env, device=device)
+        rewards = agent.train(episodes=args.episodes)
+        avg_reward = sum(rewards) / len(rewards)
+        print(
+            f"Trained {algo} for {args.episodes} episodes. Avg reward: {avg_reward:.3f}"
+        )
 
 
 if __name__ == "__main__":

@@ -24,10 +24,11 @@ Each agent exposes a `train(episodes)` method and selects actions that respect t
 pip install -r requirements.txt
 ```
 
-2. Train any agent (defaults to DQN if `--algo` is omitted):
+2. Train agents (defaults to training **all** algorithms sequentially if `--algo` is omitted):
 
 ```bash
-python train.py --episodes 200              # DQN
+python train.py --episodes 200              # trains all algorithms
+python train.py --algo dqn --episodes 200   # just DQN
 python train.py --algo rainbow --episodes 400
 python train.py --algo sac --episodes 400
 ```
