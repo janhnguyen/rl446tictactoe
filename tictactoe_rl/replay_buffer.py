@@ -40,6 +40,8 @@ class PrioritizedReplayBuffer(ReplayBuffer):
     def push(self, state: np.ndarray, action: int, reward: float, next_state: np.ndarray, done: bool) -> None:
         super().push(state, action, reward, next_state, done)
         max_prio = self.priorities.max() if self.buffer else 1.0
+        if max_prio <= 0:
+            max_prio = 1.0
         self.priorities[self.position - 1] = max_prio
 
     def sample(self, batch_size: int):
@@ -49,9 +51,13 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             prios = self.priorities[: self.position]
 
         probs = prios ** self.alpha
-        probs /= probs.sum()
+        prob_sum = probs.sum()
+        if prob_sum <= 0:
+            probs = np.full_like(prios, 1.0 / len(prios))
+        else:
+            probs /= prob_sum
 
-        indices = np.random.choice(len(self.buffer), batch_size, p=probs)
+        indices = np.random.choice(len(prios), batch_size, p=probs)
         samples = [self.buffer[idx] for idx in indices]
         total = len(self.buffer)
         weights = (total * probs[indices]) ** (-self.beta)
