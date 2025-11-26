@@ -27,10 +27,10 @@ pip install -r requirements.txt
 2. Train agents (defaults to training **all** algorithms sequentially if `--algo` is omitted). Checkpoints are saved to `checkpoints/<algo>.pt` by default:
 
 ```bash
-python train.py --episodes 200              # trains all algorithms
-python train.py --algo dqn --episodes 200   # just DQN
-python train.py --algo rainbow --episodes 400
-python train.py --algo sac --episodes 400
+python train.py --episodes 800              # trains all algorithms with enough games to learn
+python train.py --algo dqn --episodes 800   # just DQN/Double DQN with masked targets
+python train.py --algo rainbow --episodes 800
+python train.py --algo sac --episodes 800
 ```
 
 GPU acceleration is used when available. Set `--seed` for reproducible runs.

@@ -16,6 +16,19 @@ def epsilon_by_frame(frame_idx: int, eps_start: float, eps_final: float, eps_dec
     return eps_final + (eps_start - eps_final) * math.exp(-1.0 * frame_idx / eps_decay)
 
 
+def action_mask(states: np.ndarray, action_space: int, device: torch.device) -> torch.Tensor:
+    """Return a mask tensor with ``0`` for valid moves and ``-inf`` for invalid ones."""
+
+    states_np = np.array(states)
+    if states_np.ndim == 1:
+        states_np = states_np.reshape(1, -1)
+    mask = np.full((states_np.shape[0], action_space), -np.inf, dtype=np.float32)
+    for idx, state in enumerate(states_np):
+        available = np.where(state == 0)[0]
+        mask[idx, available] = 0.0
+    return torch.as_tensor(mask, device=device)
+
+
 def soft_update(target: torch.nn.Module, source: torch.nn.Module, tau: float) -> None:
     for target_param, param in zip(target.parameters(), source.parameters()):
         target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)

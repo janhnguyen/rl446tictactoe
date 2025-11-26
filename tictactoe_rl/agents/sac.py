@@ -23,7 +23,7 @@ class SACConfig:
     alpha: float = 0.2
     batch_size: int = 64
     replay_size: int = 5000
-    min_buffer_size: int = 500
+    min_buffer_size: int = 100
     hidden: tuple = (128, 128)
 
 
@@ -111,11 +111,16 @@ class SACAgent:
         dones_v = torch.tensor(dones, dtype=torch.float32, device=self.device)
 
         with torch.no_grad():
-            next_probs, next_log_probs = self.policy(next_states_v)
-            next_q1 = self.target_q1(next_states_v)
-            next_q2 = self.target_q2(next_states_v)
+            availability = torch.tensor((next_states == 0), device=self.device, dtype=torch.float32)
+            next_probs, _ = self.policy(next_states_v)
+            masked_next_probs = next_probs * availability
+            masked_next_probs = masked_next_probs / masked_next_probs.sum(dim=1, keepdim=True).clamp(min=1e-8)
+            masked_next_log_probs = torch.log(masked_next_probs.clamp(min=1e-8))
+
+            next_q1 = self.target_q1(next_states_v).masked_fill(~availability.bool(), -1e9)
+            next_q2 = self.target_q2(next_states_v).masked_fill(~availability.bool(), -1e9)
             min_next_q = torch.minimum(next_q1, next_q2)
-            next_value = (next_probs * (min_next_q - self.config.alpha * next_log_probs)).sum(dim=1)
+            next_value = (masked_next_probs * (min_next_q - self.config.alpha * masked_next_log_probs)).sum(dim=1)
             target_q = rewards_v + self.config.gamma * (1 - dones_v) * next_value
 
         q1_pred = self.q1(states_v).gather(1, actions_v.unsqueeze(1)).squeeze(1)
@@ -131,11 +136,16 @@ class SACAgent:
         q2_loss.backward()
         self.q2_opt.step()
 
-        probs, log_probs = self.policy(states_v)
-        q1_values = self.q1(states_v)
-        q2_values = self.q2(states_v)
+        availability = torch.tensor((states == 0), device=self.device, dtype=torch.float32)
+        probs, _ = self.policy(states_v)
+        masked_probs = probs * availability
+        masked_probs = masked_probs / masked_probs.sum(dim=1, keepdim=True).clamp(min=1e-8)
+        masked_log_probs = torch.log(masked_probs.clamp(min=1e-8))
+
+        q1_values = self.q1(states_v).masked_fill(~availability.bool(), -1e9)
+        q2_values = self.q2(states_v).masked_fill(~availability.bool(), -1e9)
         min_q = torch.minimum(q1_values, q2_values)
-        policy_loss = (probs * (self.config.alpha * log_probs - min_q)).sum(dim=1).mean()
+        policy_loss = (masked_probs * (self.config.alpha * masked_log_probs - min_q)).sum(dim=1).mean()
         self.policy_opt.zero_grad()
         policy_loss.backward()
         self.policy_opt.step()

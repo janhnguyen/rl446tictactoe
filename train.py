@@ -33,7 +33,7 @@ def main():
         default="all",
         help="which algorithm to train (default: all)",
     )
-    parser.add_argument("--episodes", type=int, default=200, help="number of episodes")
+    parser.add_argument("--episodes", type=int, default=800, help="number of episodes")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
         "--save-dir",

@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 
 from tictactoe_rl.agents.dqn import DQNAgent, DQNConfig
-from tictactoe_rl.utils import to_tensor
+from tictactoe_rl.utils import action_mask, to_tensor
 
 
 class DoubleDQNAgent(DQNAgent):
@@ -23,8 +23,11 @@ class DoubleDQNAgent(DQNAgent):
         state_action_values = q_values.gather(1, actions_v.unsqueeze(1)).squeeze(1)
 
         with torch.no_grad():
-            next_actions = self.policy_net(next_states_v).argmax(1)
-            next_q_values = self.target_net(next_states_v).gather(1, next_actions.unsqueeze(1)).squeeze(1)
+            mask = action_mask(next_states, self.env.action_space, self.device)
+            policy_q = self.policy_net(next_states_v) + mask
+            next_actions = policy_q.argmax(1)
+            target_q = self.target_net(next_states_v) + mask
+            next_q_values = target_q.gather(1, next_actions.unsqueeze(1)).squeeze(1)
             expected = rewards_v + self.config.gamma * next_q_values * (1 - dones_v)
 
         loss = F.mse_loss(state_action_values, expected)

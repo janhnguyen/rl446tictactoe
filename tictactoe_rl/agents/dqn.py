@@ -12,7 +12,7 @@ from torch import nn, optim
 from tictactoe_rl.env import TicTacToeEnv
 from tictactoe_rl.networks import mlp
 from tictactoe_rl.replay_buffer import ReplayBuffer
-from tictactoe_rl.utils import epsilon_by_frame, to_tensor
+from tictactoe_rl.utils import action_mask, epsilon_by_frame, to_tensor
 
 
 torch.autograd.set_detect_anomaly(False)
@@ -24,11 +24,11 @@ class DQNConfig:
     batch_size: int = 64
     lr: float = 1e-3
     replay_size: int = 5000
-    min_buffer_size: int = 500
+    min_buffer_size: int = 100
     eps_start: float = 1.0
     eps_final: float = 0.05
-    eps_decay: int = 5000
-    target_update: int = 200
+    eps_decay: int = 1000
+    target_update: int = 100
     hidden: tuple = (128, 128)
 
 
@@ -80,7 +80,9 @@ class DQNAgent:
         state_action_values = q_values.gather(1, actions_v.unsqueeze(1)).squeeze(1)
 
         with torch.no_grad():
-            next_q_values = self.target_net(next_states_v).max(1)[0]
+            mask = action_mask(next_states, self.env.action_space, self.device)
+            masked_next_q = self.target_net(next_states_v) + mask
+            next_q_values = masked_next_q.max(1)[0]
             expected = rewards_v + self.config.gamma * next_q_values * (1 - dones_v)
 
         loss = F.mse_loss(state_action_values, expected)

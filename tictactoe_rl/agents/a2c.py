@@ -71,12 +71,18 @@ class A2CAgent:
             values = []
             rewards = []
             dones = []
+            entropies = []
             total_reward = 0.0
             done = False
             while not done:
                 action, prob = self.select_action(state)
                 logits, value = self.model(to_tensor(state, self.device).unsqueeze(0))
+                mask = torch.full_like(logits, float("-inf"))
+                mask[0, [i for i, v in enumerate(state) if v == 0]] = 0
+                logits = logits + mask
                 log_prob = torch.log_softmax(logits, dim=-1)[0, action]
+                policy_probs = torch.softmax(logits, dim=-1)
+                entropies.append(-(policy_probs * torch.log(policy_probs + 1e-8)).sum())
                 result = self.env.step(action)
                 log_probs.append(log_prob)
                 values.append(value.squeeze(0))
@@ -96,9 +102,10 @@ class A2CAgent:
             values_t = torch.cat(values)
 
             advantage = returns_t - values_t
+            advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
             actor_loss = -(log_probs_t * advantage.detach()).mean()
             critic_loss = advantage.pow(2).mean()
-            entropy = -torch.sum(torch.exp(log_probs_t) * log_probs_t)
+            entropy = torch.stack(entropies).mean()
             loss = actor_loss + self.config.value_coef * critic_loss - self.config.entropy_beta * entropy
 
             self.optimizer.zero_grad()

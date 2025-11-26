@@ -12,7 +12,7 @@ from torch import optim
 from tictactoe_rl.env import TicTacToeEnv
 from tictactoe_rl.networks import NoisyDuelingDQN
 from tictactoe_rl.replay_buffer import PrioritizedReplayBuffer
-from tictactoe_rl.utils import hard_update, to_tensor
+from tictactoe_rl.utils import action_mask, hard_update, to_tensor
 
 
 @dataclass
@@ -21,8 +21,8 @@ class RainbowConfig:
     batch_size: int = 64
     lr: float = 1e-3
     replay_size: int = 5000
-    min_buffer_size: int = 500
-    target_update: int = 200
+    min_buffer_size: int = 100
+    target_update: int = 100
     n_step: int = 3
     hidden: tuple = (128, 128)
 
@@ -72,8 +72,11 @@ class RainbowAgent:
         state_action_values = q_values.gather(1, actions_v.unsqueeze(1)).squeeze(1)
 
         with torch.no_grad():
-            next_actions = self.policy_net(next_states_v).argmax(1)
-            next_q = self.target_net(next_states_v).gather(1, next_actions.unsqueeze(1)).squeeze(1)
+            mask = action_mask(next_states, self.env.action_space, self.device)
+            policy_q = self.policy_net(next_states_v) + mask
+            next_actions = policy_q.argmax(1)
+            target_q = self.target_net(next_states_v) + mask
+            next_q = target_q.gather(1, next_actions.unsqueeze(1)).squeeze(1)
             targets = rewards_v + self.config.gamma * next_q * (1 - dones_v)
 
         td_errors = state_action_values - targets
