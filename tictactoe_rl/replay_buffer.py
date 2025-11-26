@@ -50,12 +50,18 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         else:
             prios = self.priorities[: self.position]
 
+        # Replace any invalid values to avoid NaNs during probability normalization
+        prios = np.nan_to_num(prios, nan=0.0, posinf=0.0, neginf=0.0)
         probs = prios ** self.alpha
-        prob_sum = probs.sum()
+        prob_sum = np.nan_to_num(probs, nan=0.0).sum()
         if prob_sum <= 0:
             probs = np.full_like(prios, 1.0 / len(prios))
         else:
-            probs /= prob_sum
+            probs = np.nan_to_num(probs / prob_sum, nan=0.0)
+
+        # If any probabilities are still invalid, fall back to uniform to keep sampling stable
+        if not np.isfinite(probs).all() or probs.sum() <= 0:
+            probs = np.full_like(prios, 1.0 / len(prios))
 
         indices = np.random.choice(len(prios), batch_size, p=probs)
         samples = [self.buffer[idx] for idx in indices]
