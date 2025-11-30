@@ -86,6 +86,7 @@ class PPOAgent:
 
         episode = 0
         state = self.env.reset()
+        episode_reward = 0.0
         while episode < episodes:
             action, log_prob, value = self.select_action(state)
             result = self.env.step(action)
@@ -95,12 +96,14 @@ class PPOAgent:
             values.append(value.item())
             rewards.append(result.reward)
             dones.append(int(result.done))
+            episode_reward += result.reward
             state = result.state
 
             if result.done:
-                total_rewards.append(sum(rewards[-(len(dones)) :]))
+                total_rewards.append(episode_reward)
                 state = self.env.reset()
                 episode += 1
+                episode_reward = 0.0
 
             if len(states) >= self.config.rollout_size:
                 advs, returns = self.compute_advantages(rewards, values, dones)
