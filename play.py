@@ -29,9 +29,17 @@ ALGORITHMS: Dict[str, Type] = {
 
 
 def masked_argmax(values: np.ndarray, available):
-    masked = np.full_like(values, -np.inf, dtype=float)
+    available = list(available)
+    if not available:
+        raise ValueError("No available actions to select.")
+
+    masked = np.full_like(values, np.nan, dtype=float)
     for a in available:
         masked[a] = values[a]
+
+    if np.all(np.isnan(masked)):
+        return int(available[0])
+
     return int(np.nanargmax(masked))
 
 
@@ -78,6 +86,10 @@ def play_round(agent, device: torch.device) -> None:
     print(env.render())
 
     while not done:
+        available = env.available_actions()
+        if not available:
+            print("No moves left. Draw!")
+            break
         action = greedy_action(agent, state, device)
         agent_result = env.step(action, auto_opponent=False)
         state = agent_result.state
